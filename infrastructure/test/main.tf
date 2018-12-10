@@ -61,7 +61,7 @@ resource "azurerm_local_network_gateway" "onpremise" {
   location            = "${azurerm_resource_group.resourcegroup.location}"
   resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
   gateway_address     = "${var.gateway_address}"
-  address_space       = ["10.0.2.0/24"]
+  address_space       = ["10.1.1.0/24"]
 }
 
 resource "azurerm_virtual_network_gateway_connection" "vnetgwconnection" {
@@ -83,7 +83,7 @@ resource "azurerm_subnet" "mgmtsubnet" {
     name                 = "${var.env}ManagementSubnet"
     resource_group_name  = "${azurerm_resource_group.resourcegroup.name}"
     virtual_network_name = "${azurerm_virtual_network.network.name}"
-    address_prefix       = "10.0.3.0/24"
+    address_prefix       = "10.0.2.0/24"
 }
 
 # Create Network Security Group and rule
@@ -164,3 +164,4 @@ resource "azurerm_virtual_machine" "vm" {
         environment = "${var.env}"
     }
 }
+
