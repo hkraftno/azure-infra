@@ -1,0 +1,9 @@
+# Terraform
+**/.terraform
+**/terraform.tfstate.backup
+**/terraform.tfstate
+
+# Vi swap files
+**/.*.swp
+
+.idea
