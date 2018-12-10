@@ -60,7 +60,7 @@ resource "azurerm_local_network_gateway" "onpremise" {
   name                = "onpremise"
   location            = "${azurerm_resource_group.resourcegroup.location}"
   resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
-  gateway_address     = "168.62.225.23"
+  gateway_address     = "${var.gateway_address}"
   address_space       = ["10.0.2.0/24"]
 }
 
