@@ -1,8 +1,6 @@
 secret-vars:
   - name: TF_VAR_vpn_shared_key
     key: azure/test/vpn_shared_key
-  - name: TF_VAR_storage_account_access_key
-    key: azure/test/storage_account_access_key
 
 vars:
   - name: TF_VAR_env
