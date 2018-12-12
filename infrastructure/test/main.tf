@@ -4,6 +4,7 @@ resource "azurerm_resource_group" "resourcegroup" {
 
     tags {
         environment = "${var.env}"
+        info        = "${var.info_tag}"
     }
 }
 
@@ -15,6 +16,7 @@ resource "azurerm_virtual_network" "network" {
 
     tags {
         environment = "${var.env}"
+        info        = "${var.info_tag}"
     }
 }
 
@@ -29,51 +31,62 @@ resource "azurerm_subnet" "gwsubnet" {
 # VPN resources
 
 resource "azurerm_public_ip" "publicip" {
-  name                = "${var.env}PublicIP"
-  location            = "${azurerm_resource_group.resourcegroup.location}"
-  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    name                         = "${var.env}PublicIP"
+    location                     = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name          = "${azurerm_resource_group.resourcegroup.name}"
+    sku                          = "Basic"
+    public_ip_address_allocation = "Static"
 
-  public_ip_address_allocation = "Dynamic"
+    tags {
+        environment = "${var.env}"
+        info        = "${var.info_tag}"
+    }
 }
 
 resource "azurerm_virtual_network_gateway" "vnetgw" {
-  name                = "${var.env}VirtualNetworkGW"
-  location            = "${azurerm_resource_group.resourcegroup.location}"
-  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    name                = "${var.env}VirtualNetworkGW"
+    location            = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    type     = "Vpn"
+    vpn_type = "RouteBased"
+    active_active = false
+    enable_bgp    = false
+    sku           = "Basic"
 
-  type     = "Vpn"
-  vpn_type = "RouteBased"
+    ip_configuration {
+      name                          = "${var.env}VnetGatewayConfig"
+      public_ip_address_id          = "${azurerm_public_ip.publicip.id}"
+      private_ip_address_allocation = "Dynamic"
+      subnet_id                     = "${azurerm_subnet.gwsubnet.id}"
+    }
 
-  active_active = false
-  enable_bgp    = false
-  sku           = "Basic"
-
-  ip_configuration {
-    name                          = "${var.env}VnetGatewayConfig"
-    public_ip_address_id          = "${azurerm_public_ip.publicip.id}"
-    private_ip_address_allocation = "Dynamic"
-    subnet_id                     = "${azurerm_subnet.gwsubnet.id}"
-  }
+    tags {
+        environment = "${var.env}"
+        info        = "${var.info_tag}"
+    }
 }
 
 resource "azurerm_local_network_gateway" "onpremise" {
-  name                = "onpremise"
-  location            = "${azurerm_resource_group.resourcegroup.location}"
-  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
-  gateway_address     = "${var.gateway_address}"
-  address_space       = ["10.1.1.0/24"]
+    name                = "onpremise"
+    location            = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    gateway_address     = "${var.gateway_address}"
+    address_space       = ["10.1.1.0/24"]
 }
 
 resource "azurerm_virtual_network_gateway_connection" "vnetgwconnection" {
-  name                = "onpremise"
-  location            = "${azurerm_resource_group.resourcegroup.location}"
-  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    name                = "onpremise"
+    location            = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    type                       = "IPsec"
+    virtual_network_gateway_id = "${azurerm_virtual_network_gateway.vnetgw.id}"
+    local_network_gateway_id   = "${azurerm_local_network_gateway.onpremise.id}"
+    shared_key = "${var.vpn_shared_key}"
 
-  type                       = "IPsec"
-  virtual_network_gateway_id = "${azurerm_virtual_network_gateway.vnetgw.id}"
-  local_network_gateway_id   = "${azurerm_local_network_gateway.onpremise.id}"
-
-  shared_key = "${var.vpn_shared_key}"
+    tags {
+        environment = "${var.env}"
+        info        = "${var.info_tag}"
+    }
 }
 
 
@@ -94,21 +107,22 @@ resource "azurerm_network_security_group" "securitygroup" {
 
     tags {
         environment = "${var.env}"
+        info        = "${var.info_tag}"
     }
 }
 
 resource "azurerm_network_security_rule" "networksecurityrule" {
-  name                        = "${var.env}SecurityRule"
-  priority                    = 100
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Udp"
-  source_port_range           = "*"
-  destination_port_range      = "0-8"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
-  network_security_group_name = "${azurerm_network_security_group.securitygroup.name}"
+    name                        = "${var.env}SecurityRule"
+    priority                    = 100
+    direction                   = "Inbound"
+    access                      = "Allow"
+    protocol                    = "Udp"
+    source_port_range           = "*"
+    destination_port_range      = "0-8"
+    source_address_prefix       = "*"
+    destination_address_prefix  = "*"
+    resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
+    network_security_group_name = "${azurerm_network_security_group.securitygroup.name}"
 }
 
 # Create network interface
@@ -126,6 +140,7 @@ resource "azurerm_network_interface" "nic" {
 
     tags {
         environment = "${var.env}"
+        info        = "${var.info_tag}"
     }
 }
 
@@ -147,7 +162,7 @@ resource "azurerm_virtual_machine" "vm" {
     storage_image_reference {
         publisher = "Canonical"
         offer     = "UbuntuServer"
-        sku       = "16.04.0-LTS"
+        sku       = "18.04-LTS"
         version   = "latest"
     }
 
@@ -162,6 +177,7 @@ resource "azurerm_virtual_machine" "vm" {
 
     tags {
         environment = "${var.env}"
+        info        = "${var.info_tag}"
     }
 }
 
