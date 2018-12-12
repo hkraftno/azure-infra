@@ -16,7 +16,7 @@ Basis infrastructure is configured using Terraform, with the configuration in th
 To set up or change, run the following commands (in the same folder as the appropriate `main.tf` file):
 
 ```bash
-envchain aws terraform init
-envchain aws terraform-az plan
+envchain az terraform init -backend-config access_key=$(gopass show azure/test/storage_account_access_key)
+envchain az terraform-az plan
 ```
 
