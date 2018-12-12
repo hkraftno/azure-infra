@@ -1,0 +1,8 @@
+secret-vars:
+  - name: TF_VAR_vpn_shared_key
+    key: azure/prod/vpn_shared_key
+
+vars:
+  - name: TF_VAR_env
+    value: prod
+
