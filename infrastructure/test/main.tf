@@ -10,7 +10,7 @@ resource "azurerm_resource_group" "resourcegroup" {
 
 resource "azurerm_virtual_network" "network" {
     name                = "${var.env}Vnet"
-    address_space       = ["10.0.0.0/16"]
+    address_space       = ["${var.virtual_network_address_space}"]
     location            = "${var.location}"
     resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
 
@@ -21,10 +21,10 @@ resource "azurerm_virtual_network" "network" {
 }
 
 resource "azurerm_subnet" "gwsubnet" {
-    name                 = "${var.env}GatewaySubnet"
+    name                 = "GatewaySubnet"
     resource_group_name  = "${azurerm_resource_group.resourcegroup.name}"
     virtual_network_name = "${azurerm_virtual_network.network.name}"
-    address_prefix       = "10.0.1.0/24"
+    address_prefix       = "${var.gwsubnet_address_prefix}"
 }
 
 
@@ -35,7 +35,7 @@ resource "azurerm_public_ip" "publicip" {
     location                     = "${azurerm_resource_group.resourcegroup.location}"
     resource_group_name          = "${azurerm_resource_group.resourcegroup.name}"
     sku                          = "Basic"
-    public_ip_address_allocation = "Static"
+    public_ip_address_allocation = "Dynamic"
 
     tags {
         environment = "${var.env}"
@@ -70,18 +70,18 @@ resource "azurerm_local_network_gateway" "onpremise" {
     name                = "onpremise"
     location            = "${azurerm_resource_group.resourcegroup.location}"
     resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
-    gateway_address     = "${var.gateway_address}"
-    address_space       = ["10.1.1.0/24"]
+    gateway_address     = "${var.onpremise_gateway_address}"
+    address_space       = ["${var.onpremise_network_gateway_address_space}"]
 }
 
 resource "azurerm_virtual_network_gateway_connection" "vnetgwconnection" {
-    name                = "onpremise"
-    location            = "${azurerm_resource_group.resourcegroup.location}"
-    resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    name                       = "onpremise"
+    location                   = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name        = "${azurerm_resource_group.resourcegroup.name}"
     type                       = "IPsec"
     virtual_network_gateway_id = "${azurerm_virtual_network_gateway.vnetgw.id}"
     local_network_gateway_id   = "${azurerm_local_network_gateway.onpremise.id}"
-    shared_key = "${var.vpn_shared_key}"
+    shared_key                 = "${var.vpn_shared_key}"
 
     tags {
         environment = "${var.env}"
@@ -96,7 +96,7 @@ resource "azurerm_subnet" "mgmtsubnet" {
     name                 = "${var.env}ManagementSubnet"
     resource_group_name  = "${azurerm_resource_group.resourcegroup.name}"
     virtual_network_name = "${azurerm_virtual_network.network.name}"
-    address_prefix       = "10.0.2.0/24"
+    address_prefix       = "${var.mgmtsubnet_address_prefix}"
 }
 
 # Create Network Security Group and rule
@@ -144,6 +144,11 @@ resource "azurerm_network_interface" "nic" {
     }
 }
 
+resource "random_string" "password" {
+  length = 16
+  special = true
+}
+
 # Create virtual machine
 resource "azurerm_virtual_machine" "vm" {
     name                  = "${var.env}PingVM"
@@ -169,15 +174,17 @@ resource "azurerm_virtual_machine" "vm" {
     os_profile {
         computer_name  = "${var.env}ping"
         admin_username = "azureuser"
+        admin_password  = "${random_string.password.result}"
     }
 
     os_profile_linux_config {
-        disable_password_authentication = true
+        disable_password_authentication = false
     }
 
     tags {
         environment = "${var.env}"
         info        = "${var.info_tag}"
+        note        = "This server is used as a server to ping for the VPN tunnel to stay up"
     }
 }
 
