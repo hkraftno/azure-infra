@@ -67,7 +67,7 @@ resource "azurerm_virtual_network_gateway" "vnetgw" {
 }
 
 resource "azurerm_local_network_gateway" "onpremise" {
-    name                = "onpremise"
+    name                = "${var.env}OnPremiseNetworkGateway"
     location            = "${azurerm_resource_group.resourcegroup.location}"
     resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
     gateway_address     = "${var.onpremise_gateway_address}"
@@ -75,7 +75,7 @@ resource "azurerm_local_network_gateway" "onpremise" {
 }
 
 resource "azurerm_virtual_network_gateway_connection" "vnetgwconnection" {
-    name                       = "onpremise"
+    name                       = "${var.env}OnPremiseNetworkGatewayConnection"
     location                   = "${azurerm_resource_group.resourcegroup.location}"
     resource_group_name        = "${azurerm_resource_group.resourcegroup.name}"
     type                       = "IPsec"
