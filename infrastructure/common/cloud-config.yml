@@ -1,0 +1,4 @@
+vars:
+  - name: TF_VAR_env
+    value: common
+
