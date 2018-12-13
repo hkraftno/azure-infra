@@ -66,28 +66,28 @@ resource "azurerm_virtual_network_gateway" "vnetgw" {
     }
 }
 
-#resource "azurerm_local_network_gateway" "onpremise" {
-#    name                = "${var.env}OnPremiseNetworkGateway"
-#    location            = "${azurerm_resource_group.resourcegroup.location}"
-#    resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
-#    gateway_address     = "${var.onpremise_gateway_address}"
-#    address_space       = ["${var.onpremise_network_gateway_address_space}"]
-#}
+resource "azurerm_local_network_gateway" "onpremise" {
+    name                = "${var.env}OnPremiseNetworkGateway"
+    location            = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    gateway_address     = "${var.onpremise_gateway_address}"
+    address_space       = ["${var.onpremise_network_gateway_address_space}"]
+}
 
-#resource "azurerm_virtual_network_gateway_connection" "vnetgwconnection" {
-#    name                       = "${var.env}OnPremiseNetworkGatewayConnection"
-#    location                   = "${azurerm_resource_group.resourcegroup.location}"
-#    resource_group_name        = "${azurerm_resource_group.resourcegroup.name}"
-#    type                       = "IPsec"
-#    virtual_network_gateway_id = "${azurerm_virtual_network_gateway.vnetgw.id}"
-#    local_network_gateway_id   = "${azurerm_local_network_gateway.onpremise.id}"
-#    shared_key                 = "${var.vpn_shared_key}"
-#
-#    tags {
-#        environment = "${var.env}"
-#        info        = "${var.info_tag}"
-#    }
-#}
+resource "azurerm_virtual_network_gateway_connection" "vnetgwconnection" {
+    name                       = "${var.env}OnPremiseNetworkGatewayConnection"
+    location                   = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name        = "${azurerm_resource_group.resourcegroup.name}"
+    type                       = "IPsec"
+    virtual_network_gateway_id = "${azurerm_virtual_network_gateway.vnetgw.id}"
+    local_network_gateway_id   = "${azurerm_local_network_gateway.onpremise.id}"
+    shared_key                 = "${var.vpn_shared_key}"
+
+    tags {
+        environment = "${var.env}"
+        info        = "${var.info_tag}"
+    }
+}
 
 
 # Management resources
