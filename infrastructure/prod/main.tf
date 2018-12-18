@@ -20,6 +20,8 @@ resource "azurerm_virtual_network" "network" {
     }
 }
 
+# VPN Gateway
+
 resource "azurerm_subnet" "gwsubnet" {
     name                 = "GatewaySubnet"
     resource_group_name  = "${azurerm_resource_group.resourcegroup.name}"
@@ -28,19 +30,13 @@ resource "azurerm_subnet" "gwsubnet" {
 }
 
 
-# VPN resources
-
-resource "azurerm_public_ip" "publicip" {
-    name                         = "${var.env}PublicIP"
-    location                     = "${azurerm_resource_group.resourcegroup.location}"
-    resource_group_name          = "${azurerm_resource_group.resourcegroup.name}"
-    sku                          = "Basic"
-    public_ip_address_allocation = "Dynamic"
-
-    tags {
-        environment = "${var.env}"
-        info        = "${var.info_tag}"
-    }
+module "network_gateway_public_ip" {
+    source              = "../modules/public_ip"
+    name                = "${var.env}PublicIP"
+    location            = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    env			= "${var.env}"
+    info_tag            = "${var.info_tag}"
 }
 
 resource "azurerm_virtual_network_gateway" "vnetgw" {
@@ -55,7 +51,7 @@ resource "azurerm_virtual_network_gateway" "vnetgw" {
 
     ip_configuration {
       name                          = "${var.env}VnetGatewayConfig"
-      public_ip_address_id          = "${azurerm_public_ip.publicip.id}"
+      public_ip_address_id          = "${module.network_gateway_public_ip.id}"
       private_ip_address_allocation = "Dynamic"
       subnet_id                     = "${azurerm_subnet.gwsubnet.id}"
     }
@@ -65,6 +61,8 @@ resource "azurerm_virtual_network_gateway" "vnetgw" {
         info        = "${var.info_tag}"
     }
 }
+
+# On premise VPN gateway
 
 resource "azurerm_local_network_gateway" "onpremise" {
     name                = "${var.env}OnPremiseNetworkGateway"
@@ -89,7 +87,6 @@ resource "azurerm_virtual_network_gateway_connection" "vnetgwconnection" {
     }
 }
 
-
 # Management resources
 
 resource "azurerm_subnet" "mgmtsubnet" {
@@ -99,10 +96,9 @@ resource "azurerm_subnet" "mgmtsubnet" {
     address_prefix       = "${var.mgmtsubnet_address_prefix}"
 }
 
-# Create Network Security Group and rule
 resource "azurerm_network_security_group" "securitygroup" {
     name                = "${var.env}PingSecurityGroup"
-    location            = "${var.location}"
+    location            = "${azurerm_resource_group.resourcegroup.location}"
     resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
 
     tags {
@@ -111,37 +107,121 @@ resource "azurerm_network_security_group" "securitygroup" {
     }
 }
 
-resource "azurerm_network_security_rule" "networksecurityrule" {
-    name                        = "${var.env}SecurityRule"
-    priority                    = 100
-    direction                   = "Inbound"
-    access                      = "Allow"
-    protocol                    = "Udp"
-    source_port_range           = "*"
-    destination_port_range      = "0-8"
-    source_address_prefix       = "*"
-    destination_address_prefix  = "*"
-    resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
-    network_security_group_name = "${azurerm_network_security_group.securitygroup.name}"
+# Management server
+
+module "mgmtserver_public_ip" {
+    source              = "../modules/public_ip"
+    name                = "${var.env}MgmtPublicIP"
+    location            = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+    env                 = "${var.env}"
+    info_tag            = "${var.info_tag}"
 }
 
-# Create network interface
-resource "azurerm_network_interface" "nic" {
-    name                      = "${var.env}NIC"
-    location                  = "${var.location}"
-    resource_group_name       = "${azurerm_resource_group.resourcegroup.name}"
-    network_security_group_id = "${azurerm_network_security_group.securitygroup.id}"
+module "mgmtserver_nic" {
+    source                = "../modules/public_nic"
+    name                  = "${var.env}MgmtNIC"
+    location              = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name   = "${azurerm_resource_group.resourcegroup.name}"
+    security_group_id     = "${azurerm_network_security_group.securitygroup.id}"
+    ip_configuration_name = "${var.env}MgmtNicConfiguration"
+    subnet_id             = "${azurerm_subnet.mgmtsubnet.id}"
+    public_ip_address_id  = "${module.mgmtserver_public_ip.id}"
+    env                   = "${var.env}"
+    info_tag              = "${var.info_tag}"
+}
 
-    ip_configuration {
-        name                          = "${var.env}NicConfiguration"
-        subnet_id                     = "${azurerm_subnet.mgmtsubnet.id}"
-        private_ip_address_allocation = "dynamic"
+resource "azurerm_virtual_machine" "mgmtvm" {
+    name                          = "${var.env}MgmtVM"
+    location                      = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name           = "${azurerm_resource_group.resourcegroup.name}"
+    network_interface_ids         = ["${module.mgmtserver_nic.id}"]
+    vm_size                       = "Basic_A0"
+    delete_os_disk_on_termination = "true"
+
+    storage_os_disk {
+        name              = "${var.env}MgmtOsDisk"
+        caching           = "None"
+        create_option     = "FromImage"
+        managed_disk_type = "Standard_LRS"
+    }
+
+    storage_image_reference {
+        publisher = "Canonical"
+        offer     = "UbuntuServer"
+        sku       = "18.04-LTS"
+        version   = "latest"
+    }
+
+    os_profile {
+        admin_username = "azureuser"
+        computer_name  = "${var.env}mgmtserver"
+    }
+
+    os_profile_linux_config {
+        disable_password_authentication = true
+        ssh_keys = {
+            path     = "/home/azureuser/.ssh/authorized_keys"
+            key_data = "${var.simo_public_ssh_key}"
+        }
     }
 
     tags {
         environment = "${var.env}"
         info        = "${var.info_tag}"
+        note        = "Management server"
     }
+}
+
+resource "azurerm_virtual_machine_extension" "mgmtvmext" {
+    name                 = "${var.env}mgmtserver"
+    location             = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name  = "${azurerm_resource_group.resourcegroup.name}"
+    virtual_machine_name = "${azurerm_virtual_machine.mgmtvm.name}"
+    publisher            = "Microsoft.Azure.Extensions"
+    type                 = "CustomScript"
+    type_handler_version = "2.0"
+
+    settings = <<SETTINGS
+      {
+        "fileUris": [ "https://raw.githubusercontent.com/hkraftno/azure-infra/master/infrastructure/scripts/create_user.sh" ],
+        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}'"
+    }
+SETTINGS
+
+    tags {
+        environment = "${var.env}"
+        info        = "${var.info_tag}"
+        note        = "Create users"
+   }
+}
+
+resource "azurerm_network_security_rule" "networksecurityrule_ssh_from_algo" {
+    name                        = "${var.env}SecurityRuleSshFromAlgo"
+    priority                    = 101
+    direction                   = "Inbound"
+    access                      = "Allow"
+    protocol                    = "Tcp"
+    source_port_range           = "*"
+    destination_port_range      = "22"
+    source_address_prefix       = "${var.algo_vpn_ip}"
+    destination_address_prefix  = "${module.mgmtserver_nic.private_ip_address}"
+    resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
+    network_security_group_name = "${azurerm_network_security_group.securitygroup.name}"
+}
+
+# Server to ping for the VPN tunnel to stay up
+
+module "ping_nic" {
+    source                = "../modules/private_nic"
+    name                  = "${var.env}NIC"
+    location              = "${azurerm_resource_group.resourcegroup.location}"
+    resource_group_name   = "${azurerm_resource_group.resourcegroup.name}"
+    security_group_id     = "${azurerm_network_security_group.securitygroup.id}"
+    ip_configuration_name = "${var.env}NicConfiguration"
+    subnet_id             = "${azurerm_subnet.mgmtsubnet.id}"
+    env                   = "${var.env}"
+    info_tag              = "${var.info_tag}"
 }
 
 resource "random_string" "password" {
@@ -149,12 +229,11 @@ resource "random_string" "password" {
   special = true
 }
 
-# Create virtual machine
 resource "azurerm_virtual_machine" "vm" {
     name                  = "${var.env}PingVM"
-    location              = "${var.location}"
+    location              = "${azurerm_resource_group.resourcegroup.location}"
     resource_group_name   = "${azurerm_resource_group.resourcegroup.name}"
-    network_interface_ids = ["${azurerm_network_interface.nic.id}"]
+    network_interface_ids = ["${module.ping_nic.id}"]
     vm_size               = "Basic_A0"
 
     storage_os_disk {
@@ -188,3 +267,16 @@ resource "azurerm_virtual_machine" "vm" {
     }
 }
 
+resource "azurerm_network_security_rule" "networksecurityrule" {
+    name                        = "${var.env}SecurityRule"
+    priority                    = 100
+    direction                   = "Inbound"
+    access                      = "Allow"
+    protocol                    = "Udp"
+    source_port_range           = "*"
+    destination_port_range      = "0-8"
+    source_address_prefix       = "*"
+    destination_address_prefix  = "${module.ping_nic.private_ip_address}"
+    resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
+    network_security_group_name = "${azurerm_network_security_group.securitygroup.name}"
+}

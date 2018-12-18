@@ -2,6 +2,7 @@
 **/.terraform
 **/terraform.tfstate.backup
 **/terraform.tfstate
+**/terraform.tfstate.*
 
 # Vi swap files
 **/.*.swp
