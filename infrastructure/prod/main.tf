@@ -268,7 +268,7 @@ resource "azurerm_virtual_machine" "vm" {
 }
 
 resource "azurerm_network_security_rule" "networksecurityrule" {
-    name                        = "${var.env}SecurityRule"
+    name                        = "${var.env}PingSecurityRule"
     priority                    = 100
     direction                   = "Inbound"
     access                      = "Allow"
