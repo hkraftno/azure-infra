@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Disallow login to azureuser
+rm -f /home/azureuser/.ssh/authorized_keys
+
 umask 077
 adduser --quiet --disabled-password --shell /bin/bash --home /home/${1} --gecos '' ${1}
 mkdir /home/${1}/.ssh
