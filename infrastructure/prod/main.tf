@@ -185,7 +185,7 @@ resource "azurerm_virtual_machine_extension" "mgmtvmext" {
     settings = <<SETTINGS
       {
         "fileUris": [ "https://raw.githubusercontent.com/hkraftno/azure-infra/master/infrastructure/scripts/create_user.sh" ],
-        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}'"
+        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}' ./create_user.sh stian '${var.stian_public_ssh_key}' ./create_user.sh jarlerik '${var.jarlerik_public_ssh_key}'"
     }
 SETTINGS
 
