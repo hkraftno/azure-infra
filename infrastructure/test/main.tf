@@ -56,10 +56,6 @@ resource "azurerm_virtual_network_gateway" "vnetgw" {
       subnet_id                     = "${azurerm_subnet.gwsubnet.id}"
     }
 
-    vpn_client_configuration {
-      address_space = ["${var.point_to_site_address_space}"]
-    }
-
     tags {
         environment = "${var.env}"
         info        = "${var.info_tag}"
@@ -189,7 +185,7 @@ resource "azurerm_virtual_machine_extension" "mgmtvmext" {
     settings = <<SETTINGS
       {
         "fileUris": [ "https://raw.githubusercontent.com/hkraftno/azure-infra/master/infrastructure/scripts/create_user.sh" ],
-        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}' && ./create_user.sh stian '${var.stian_public_ssh_key}' && ./create_user.sh jarlerik '${var.jarlerik_public_ssh_key}'"
+        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}' && ./create_user.sh tof '${var.tof_public_ssh_key}' && ./create_user.sh stian '${var.stian_public_ssh_key}' && ./create_user.sh jarlerik '${var.jarlerik_public_ssh_key}'"
     }
 SETTINGS
 
