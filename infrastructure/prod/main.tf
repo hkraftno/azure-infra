@@ -185,7 +185,7 @@ resource "azurerm_virtual_machine_extension" "mgmtvmext" {
     settings = <<SETTINGS
       {
         "fileUris": [ "https://raw.githubusercontent.com/hkraftno/azure-infra/master/infrastructure/scripts/create_user.sh" ],
-        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}' && ./create_user.sh tof '${var.tof_public_ssh_key}' && ./create_user.sh stian '${var.stian_public_ssh_key}' && ./create_user.sh jarlerik '${var.jarlerik_public_ssh_key}'"
+        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}' && ./create_user.sh tof '${var.tof_public_ssh_key}' && ./create_user.sh karlgustav '${var.karlgustav_public_ssh_key}' && ./create_user.sh stian '${var.stian_public_ssh_key}' && ./create_user.sh jarlerik '${var.jarlerik_public_ssh_key}'"
     }
 SETTINGS
 
@@ -205,6 +205,20 @@ resource "azurerm_network_security_rule" "networksecurityrule_ssh_from_algo" {
     source_port_range           = "*"
     destination_port_range      = "22"
     source_address_prefix       = "${var.algo_vpn_ip}"
+    destination_address_prefix  = "${module.mgmtserver_nic.private_ip_address}"
+    resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
+    network_security_group_name = "${azurerm_network_security_group.securitygroup.name}"
+}
+
+resource "azurerm_network_security_rule" "networksecurityrule_ssh_from_algo_vpn" {
+    name                        = "${var.env}SecurityRuleSshFromAlgoVPN"
+    priority                    = 102
+    direction                   = "Inbound"
+    access                      = "Allow"
+    protocol                    = "Tcp"
+    source_port_range           = "*"
+    destination_port_range      = "22"
+    source_address_prefix       = "${var.new_algo_vpn_ip}"
     destination_address_prefix  = "${module.mgmtserver_nic.private_ip_address}"
     resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
     network_security_group_name = "${azurerm_network_security_group.securitygroup.name}"
