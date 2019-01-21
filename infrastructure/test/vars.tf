@@ -1,5 +1,8 @@
 variable "env"                                     {}
 variable "vpn_shared_key"                          {}
+variable "marketing_automation_db_user"            {}
+variable "marketing_automation_db_password"        {}
+
 variable "info_tag"                                { default = "Provisioned with Terraform" }
 variable "virtual_network_address_space"           { default = "10.0.0.0/16" }
 variable "gwsubnet_address_prefix"                 { default = "10.0.1.0/24" }

@@ -1,6 +1,10 @@
 secret-vars:
   - name: TF_VAR_vpn_shared_key
     key: azure/test/vpn_shared_key
+  - name: TF_VAR_marketing_automation_db_user
+    key: marketing_automation/test/user
+  - name: TF_VAR_marketing_automation_db_password
+    key: marketing_automation/test/sql_db_password
 
 vars:
   - name: TF_VAR_env

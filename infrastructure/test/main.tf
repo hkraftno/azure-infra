@@ -294,3 +294,19 @@ resource "azurerm_network_security_rule" "networksecurityrule" {
     resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
     network_security_group_name = "${azurerm_network_security_group.securitygroup.name}"
 }
+
+
+resource "azurerm_sql_server" "marketingsqlserver" {
+  name                         = "${var.env}-marketing-sql-server"
+  resource_group_name          = "${azurerm_resource_group.resourcegroup.name}"
+  location                     = "${azurerm_resource_group.resourcegroup.location}"
+  version                      = "12.0"
+  administrator_login          = "${var.marketing_automation_db_user}"
+  administrator_login_password = "${var.marketing_automation_db_password}"
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+    note        = "This is the SQL-database used by Marketing Automation"
+  }
+}
