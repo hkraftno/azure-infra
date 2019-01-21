@@ -307,6 +307,20 @@ resource "azurerm_sql_server" "marketingsqlserver" {
   tags {
     environment = "${var.env}"
     info        = "${var.info_tag}"
+    note        = "This is the SQL-server used by Marketing Automation"
+  }
+}
+
+resource "azurerm_sql_database" "marketingsqldb" {
+  name                = "${var.env}-marketing-sql-db"
+  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+  location            = "${var.location}"
+  server_name         = "${azurerm_sql_server.marketingsqlserver.name}"
+
+    tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
     note        = "This is the SQL-database used by Marketing Automation"
   }
 }
+
