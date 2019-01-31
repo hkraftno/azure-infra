@@ -337,7 +337,7 @@ module "proxyserver_nic" {
   name                  = "${var.env}ProxyNIC"
   location              = "${azurerm_resource_group.resourcegroup.location}"
   resource_group_name   = "${azurerm_resource_group.resourcegroup.name}"
-  security_group_id     = "${azurerm_network_security_group.securitygroup.id}"
+  security_group_id     = "${azurerm_network_security_group.securitygroup_apps.id}"
   ip_configuration_name = "${var.env}ProxyNicConfiguration"
   subnet_id             = "${azurerm_subnet.appsubnet.id}"
   env                   = "${var.env}"
@@ -368,7 +368,7 @@ resource "azurerm_virtual_machine" "proxyvm" {
 
   os_profile {
     admin_username = "azureuser"
-    admin_password = "totally-unsafe-password"
+    admin_password = "Usikker123456"
     computer_name  = "${var.env}proxyserver"
   }
 
@@ -400,7 +400,114 @@ resource "azurerm_virtual_machine_extension" "proxyvmext_bootstrapnginx" {
   settings = <<SETTINGS
       {
         "fileUris": [ ],
-        "commandToExecute": "apt-get update; apt-get install -y nginx; rm /etc/nginx/conf.d/default.conf; echo 'server { listen 9260; listen [::]:9260; server_name 10.0.3.4; location / { proxy_pass 10.193.20.152:9260/; proxy_redirect off;}}' > /etc/nginx/conf.d/default.conf; chmod +x /etc/nginx/conf.d/default.conf; systemctl start nginx; systemctl enable nginx; exit 0"
+        "commandToExecute": "apt-get update; apt-get install -y nginx; rm /etc/nginx/conf.d/default.conf; echo 'server { listen 9260; listen [::]:9260; server_name 10.0.3.5; location / { proxy_pass http://10.193.20.152:9260/; }}' > /etc/nginx/conf.d/default.conf; echo 'server { listen 10270; listen [::]:10270; server_name 10.0.3.5; location / { proxy_pass http://10.193.20.152:10270/; }}' > mitthjem.conf; chmod +x /etc/nginx/conf.d/default.conf; systemctl start nginx; systemctl enable nginx; exit 0"
+    }
+SETTINGS
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+    note        = "Bootstrap NGINX"
+  }
+}
+
+// --------------------------------- 
+// Network Security for applications without public IP-address
+resource "azurerm_network_security_rule" "networksecurityrule_apps" {
+  name                        = "${var.env}AppSecurityRule"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "*"
+  source_port_range           = "*"
+  destination_port_range      = "6000-20000"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "10.0.2.0/24"
+  resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
+  network_security_group_name = "${azurerm_network_security_group.securitygroup_apps.name}"
+}
+
+resource "azurerm_network_security_group" "securitygroup_apps" {
+  name                = "${var.env}AppSecurityGroup"
+  location            = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+  }
+}
+
+// Proxy-server in management subnet
+module "proxymgmtserver_nic" {
+  source                = "../modules/private_nic"
+  name                  = "${var.env}ProxyMgmtNIC"
+  location              = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name   = "${azurerm_resource_group.resourcegroup.name}"
+  security_group_id     = "${azurerm_network_security_group.securitygroup_apps.id}"
+  ip_configuration_name = "${var.env}ProxyMgmtNicConfiguration"
+  subnet_id             = "${azurerm_subnet.mgmtsubnet.id}"
+  env                   = "${var.env}"
+  info_tag              = "${var.info_tag}"
+}
+
+resource "azurerm_virtual_machine" "proxymgmtvm" {
+  name                          = "${var.env}ProxyMgmtVM"
+  location                      = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name           = "${azurerm_resource_group.resourcegroup.name}"
+  network_interface_ids         = ["${module.proxymgmtserver_nic.id}"]
+  vm_size                       = "Basic_A0"
+  delete_os_disk_on_termination = "true"
+
+  storage_os_disk {
+    name              = "${var.env}ProxyMgmtOsDisk"
+    caching           = "None"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+
+  storage_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18.04-LTS"
+    version   = "latest"
+  }
+
+  os_profile {
+    admin_username = "azureuser"
+    admin_password = "Usikker123456"
+    computer_name  = "${var.env}proxymgmtserver"
+  }
+
+  os_profile_linux_config {
+    disable_password_authentication = false
+
+    ssh_keys = {
+      path     = "/home/azureuser/.ssh/authorized_keys"
+      key_data = "${var.peha_public_ssh_key}"
+    }
+  }
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+    note        = "Proxy server, running NGINX in the management subnet"
+  }
+}
+
+resource "azurerm_virtual_machine_extension" "proxymgmtvmext_bootstrapnginx" {
+  name                 = "${var.env}proxymgmtserver"
+  location             = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name  = "${azurerm_resource_group.resourcegroup.name}"
+  virtual_machine_name = "${azurerm_virtual_machine.proxymgmtvm.name}"
+  publisher            = "Microsoft.Azure.Extensions"
+  type                 = "CustomScript"
+  type_handler_version = "2.0"
+
+  settings = <<SETTINGS
+      {
+        "fileUris": [ ],
+        "commandToExecute": "apt-get update; apt-get install -y nginx; rm /etc/nginx/conf.d/default.conf; echo 'server { listen 9260; listen [::]:9260; server_name 10.0.2.6; location / { proxy_pass http://10.193.20.152:9260/; }}' > /etc/nginx/conf.d/default.conf; echo 'server { listen 10270; listen [::]:10270; server_name 10.0.2.6; location / { proxy_pass http://10.193.20.152:10270/; }}' > mitthjem.conf; chmod +x /etc/nginx/conf.d/default.conf; systemctl start nginx; systemctl enable nginx; exit 0"
     }
 SETTINGS
 
