@@ -332,6 +332,14 @@ resource "azurerm_subnet" "appsubnet" {
   address_prefix       = "${var.applicationsubnet_address_prefix}"
 }
 
+// appsubnet_address_prefix
+resource "azurerm_subnet" "apisubnet" {
+  name                 = "${var.env}ApiSubnet"
+  resource_group_name  = "${azurerm_resource_group.resourcegroup.name}"
+  virtual_network_name = "${azurerm_virtual_network.network.name}"
+  address_prefix       = "${var.appsubnet_address_prefix}"
+}
+
 module "proxyserver_nic" {
   source                = "../modules/private_nic"
   name                  = "${var.env}ProxyNIC"
