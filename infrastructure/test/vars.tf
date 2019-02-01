@@ -19,8 +19,12 @@ variable "mgmtsubnet_address_prefix" {
   default = "10.0.2.0/24"
 }
 
-variable "appsubnet_address_prefix" {
+variable "applicationsubnet_address_prefix" {
   default = "10.0.3.0/24"
+}
+
+variable "appsubnet_address_prefix" {
+  default = "10.0.4.0/24"
 }
 
 variable "onpremise_gateway_address" {
