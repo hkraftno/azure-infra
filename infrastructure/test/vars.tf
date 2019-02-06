@@ -36,10 +36,6 @@ variable "onpremise_network_gateway_address_space" {
 }
 
 variable "algo_vpn_ip" {
-  default = "13.79.17.145"
-}
-
-variable "new_algo_vpn_ip" {
   default = "40.127.202.23"
 }
 
