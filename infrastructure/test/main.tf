@@ -405,22 +405,6 @@ SETTINGS
   }
 }
 
-// --------------------------------- 
-// Network Security for applications without public IP-address
-resource "azurerm_network_security_rule" "networksecurityrule_apps" {
-  name                        = "${var.env}AppSecurityRule"
-  priority                    = 100
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "*"
-  source_port_range           = "*"
-  destination_port_range      = "6000-20000"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "10.0.2.0/24"
-  resource_group_name         = "${azurerm_resource_group.resourcegroup.name}"
-  network_security_group_name = "${azurerm_network_security_group.securitygroup_apps.name}"
-}
-
 resource "azurerm_network_security_group" "securitygroup_apps" {
   name                = "${var.env}AppSecurityGroup"
   location            = "${azurerm_resource_group.resourcegroup.location}"
