@@ -20,3 +20,6 @@ envchain az terraform init -backend-config access_key=$(gopass show azure/common
 envchain az terraform-az plan
 ```
 
+## License
+
+This project is [MIT licensed](./LICENSE).
