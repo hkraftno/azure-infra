@@ -291,3 +291,91 @@ resource "azurerm_network_security_group" "securitygroup_apps" {
     info        = "${var.info_tag}"
   }
 }
+
+/**
+* Marketing Automation
+*/
+resource "azurerm_subnet" "marketingsubnet" {
+  name                 = "${var.env}MarketingAutomationSubnet"
+  resource_group_name  = "${azurerm_resource_group.resourcegroup.name}"
+  virtual_network_name = "${azurerm_virtual_network.network.name}"
+  address_prefix       = "${var.marketingsubnet_address_prefix}"
+
+  service_endpoints = ["Microsoft.Sql", "Microsoft.Storage"]
+
+  network_security_group_id = "${azurerm_network_security_group.securitygroup_apps.id}"
+
+  delegation {
+    name = "MarketingSubnetDelegation"
+
+    service_delegation {
+      name = "Microsoft.Web/serverFarms"
+    }
+  }
+}
+
+resource "azurerm_app_service_plan" "applications" {
+  name                = "${var.env}ApplicationServicePlan"
+  location            = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+  kind                = "Windows"
+
+  sku {
+    tier = "Standard"
+    size = "S1"
+  }
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+    note        = "The serviceplan for the Marketing Automation Services. I.e.: marketing portal and marketing engine."
+  }
+}
+
+resource "azurerm_app_service" "marketingautomationappservice" {
+  name                = "${var.env}MarketingAutomationDashbaordAppService"
+  location            = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+  app_service_plan_id = "${azurerm_app_service_plan.applications.id}"
+
+  site_config {
+    dotnet_framework_version = "v4.0"
+    scm_type                 = "LocalGit"
+  }
+
+  app_settings = {
+    "TEST_KEY" = "test-value"
+  }
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+    note        = "The app service for the Marketing Automation Dashboard."
+  }
+}
+
+resource "azurerm_storage_account" "marketingAutomationStorageAccount" {
+  name                     = "${var.env}marketingautomation"
+  resource_group_name      = "${azurerm_resource_group.resourcegroup.name}"
+  location                 = "${azurerm_resource_group.resourcegroup.location}"
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  account_kind             = "StorageV2"
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+    note        = "The storageaccount for the Marketing Automation."
+  }
+}
+
+resource "azurerm_function_app" "marketingautomationfa" {
+  name                      = "${var.env}MarketingAutomationEngine"
+  location                  = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name       = "${azurerm_resource_group.resourcegroup.name}"
+  app_service_plan_id       = "${azurerm_app_service_plan.applications.id}"
+  storage_connection_string = "${azurerm_storage_account.marketingAutomationStorageAccount.primary_connection_string}"
+}
+
+// TODO: add database: SQL Azure. S0 or higher.
+
