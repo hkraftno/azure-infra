@@ -31,6 +31,10 @@ variable "externalapisubnet_address_prefix" {
   default = "10.0.5.0/24"
 }
 
+variable "marketingsubnet_address_prefix" {
+  default = "10.0.6.0/24"
+}
+
 variable "onpremise_gateway_address" {
   default = "109.247.251.246"
 }
