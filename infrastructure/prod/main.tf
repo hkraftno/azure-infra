@@ -375,7 +375,24 @@ resource "azurerm_function_app" "marketingautomationfa" {
   resource_group_name       = "${azurerm_resource_group.resourcegroup.name}"
   app_service_plan_id       = "${azurerm_app_service_plan.applications.id}"
   storage_connection_string = "${azurerm_storage_account.marketingAutomationStorageAccount.primary_connection_string}"
+  version                   = "~2"
+
+  app_settings = {
+    WEBSITE_RUN_FROM_PACKAGE = "1"
+  }
 }
 
-// TODO: add database: SQL Azure. S0 or higher.
+resource "azurerm_sql_server" "marketingautomationsqlserver" {
+  name                         = "${var.env}marketingautomationsqlserver"
+  resource_group_name          = "${azurerm_resource_group.resourcegroup.name}"
+  location                     = "${azurerm_resource_group.resourcegroup.location}"
+  version                      = "12.0"
+  administrator_login          = "${var.marketing_automation_db_user}"
+  administrator_login_password = "${var.marketing_automation_db_password}"
 
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+    note        = "Database for Marketing Automation."
+  }
+}
