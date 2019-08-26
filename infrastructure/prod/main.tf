@@ -356,7 +356,7 @@ resource "azurerm_app_service" "marketingautomationappservice" {
   connection_string {
     name  = "Database"
     type  = "SQLServer"
-    value = "Server=some-server.mydomain.com;Integrated Security=SSPI"
+    value = "Server=tcp:prodmarketingautomationsqlserver.database.windows.net,1433;Initial Catalog=prodmarketingautomationsqldb;Persist Security Info=False;User ID=${var.marketing_automation_db_user};Password=${var.marketing_automation_db_password};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
   }
 }
 
@@ -386,6 +386,12 @@ resource "azurerm_function_app" "marketingautomationfa" {
   app_settings = {
     WEBSITE_RUN_FROM_PACKAGE = "1"
   }
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+    note        = "Marketing Automation Engine."
+  }
 }
 
 resource "azurerm_sql_server" "marketingautomationsqlserver" {
@@ -404,10 +410,11 @@ resource "azurerm_sql_server" "marketingautomationsqlserver" {
 }
 
 resource "azurerm_sql_database" "marketingautomationsqldb" {
-  name                = "${var.env}marketingautomationsqldb"
-  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
-  location            = "${azurerm_resource_group.resourcegroup.location}"
-  server_name         = "${azurerm_sql_server.marketingautomationsqlserver.name}"
+  name                             = "${var.env}marketingautomationsqldb"
+  resource_group_name              = "${azurerm_resource_group.resourcegroup.name}"
+  location                         = "${azurerm_resource_group.resourcegroup.location}"
+  server_name                      = "${azurerm_sql_server.marketingautomationsqlserver.name}"
+  requested_service_objective_name = "S0"
 
   tags {
     environment = "${var.env}"
