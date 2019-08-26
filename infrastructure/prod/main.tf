@@ -352,6 +352,12 @@ resource "azurerm_app_service" "marketingautomationappservice" {
     info        = "${var.info_tag}"
     note        = "The app service for the Marketing Automation Dashboard."
   }
+
+  connection_string {
+    name  = "Database"
+    type  = "SQLServer"
+    value = "Server=some-server.mydomain.com;Integrated Security=SSPI"
+  }
 }
 
 resource "azurerm_storage_account" "marketingAutomationStorageAccount" {
@@ -389,6 +395,19 @@ resource "azurerm_sql_server" "marketingautomationsqlserver" {
   version                      = "12.0"
   administrator_login          = "${var.marketing_automation_db_user}"
   administrator_login_password = "${var.marketing_automation_db_password}"
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+    note        = "Database Server for Marketing Automation."
+  }
+}
+
+resource "azurerm_sql_database" "marketingautomationsqldb" {
+  name                = "${var.env}marketingautomationsqldb"
+  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+  location            = "${azurerm_resource_group.resourcegroup.location}"
+  server_name         = "${azurerm_sql_server.marketingautomationsqlserver.name}"
 
   tags {
     environment = "${var.env}"
