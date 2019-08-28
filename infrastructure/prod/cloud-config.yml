@@ -1,10 +1,14 @@
 secret-vars:
   - name: TF_VAR_vpn_shared_key
     key: azure/prod/vpn_shared_key
+  - name: TF_VAR_marketing_automation_admin_db_user
+    key: marketing_automation/prod/db/admin/user
+  - name: TF_VAR_marketing_automation_admin_db_password
+    key: marketing_automation/prod/db/admin/password 
   - name: TF_VAR_marketing_automation_db_user
-    key: marketing_automation/prod/user
+    key: marketing_automation/prod/db/user/user
   - name: TF_VAR_marketing_automation_db_password
-    key: marketing_automation/prod/sql_db_password 
+    key: marketing_automation/prod/db/user/password
 
 vars:
   - name: TF_VAR_env

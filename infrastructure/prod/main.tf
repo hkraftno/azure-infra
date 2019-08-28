@@ -333,7 +333,7 @@ resource "azurerm_app_service_plan" "applications" {
 }
 
 resource "azurerm_app_service" "marketingautomationappservice" {
-  name                = "${var.env}MarketingAutomationDashbaordAppService"
+  name                = "hkraft-marketing-automation-dashboard"
   location            = "${azurerm_resource_group.resourcegroup.location}"
   resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
   app_service_plan_id = "${azurerm_app_service_plan.applications.id}"
@@ -341,6 +341,12 @@ resource "azurerm_app_service" "marketingautomationappservice" {
   site_config {
     dotnet_framework_version = "v4.0"
     scm_type                 = "LocalGit"
+  }
+
+  connection_string {
+    name  = "MarketingDb"
+    type  = "SQLServer"
+    value = "Server=tcp:marketing-sql-server.database.windows.net;Database=marketing-sql-db;User ID=${var.marketing_automation_db_user}@marketing-sql-server;Password=${var.marketing_automation_db_password};Trusted_Connection=False;Encrypt=True;"
   }
 
   app_settings = {
@@ -351,12 +357,6 @@ resource "azurerm_app_service" "marketingautomationappservice" {
     environment = "${var.env}"
     info        = "${var.info_tag}"
     note        = "The app service for the Marketing Automation Dashboard."
-  }
-
-  connection_string {
-    name  = "Database"
-    type  = "SQLServer"
-    value = "Server=tcp:prodmarketingautomationsqlserver.database.windows.net,1433;Initial Catalog=prodmarketingautomationsqldb;Persist Security Info=False;User ID=${var.marketing_automation_db_user};Password=${var.marketing_automation_db_password};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
   }
 }
 
@@ -376,7 +376,7 @@ resource "azurerm_storage_account" "marketingAutomationStorageAccount" {
 }
 
 resource "azurerm_function_app" "marketingautomationfa" {
-  name                      = "${var.env}MarketingAutomationEngine"
+  name                      = "hkraft-marketing-automation"
   location                  = "${azurerm_resource_group.resourcegroup.location}"
   resource_group_name       = "${azurerm_resource_group.resourcegroup.name}"
   app_service_plan_id       = "${azurerm_app_service_plan.applications.id}"
@@ -395,12 +395,12 @@ resource "azurerm_function_app" "marketingautomationfa" {
 }
 
 resource "azurerm_sql_server" "marketingautomationsqlserver" {
-  name                         = "${var.env}marketingautomationsqlserver"
+  name                         = "marketing-sql-server"
   resource_group_name          = "${azurerm_resource_group.resourcegroup.name}"
   location                     = "${azurerm_resource_group.resourcegroup.location}"
   version                      = "12.0"
-  administrator_login          = "${var.marketing_automation_db_user}"
-  administrator_login_password = "${var.marketing_automation_db_password}"
+  administrator_login          = "${var.marketing_automation_admin_db_user}"
+  administrator_login_password = "${var.marketing_automation_admin_db_password}"
 
   tags {
     environment = "${var.env}"
@@ -410,7 +410,7 @@ resource "azurerm_sql_server" "marketingautomationsqlserver" {
 }
 
 resource "azurerm_sql_database" "marketingautomationsqldb" {
-  name                             = "${var.env}marketingautomationsqldb"
+  name                             = "marketing-sql-db"
   resource_group_name              = "${azurerm_resource_group.resourcegroup.name}"
   location                         = "${azurerm_resource_group.resourcegroup.location}"
   server_name                      = "${azurerm_sql_server.marketingautomationsqlserver.name}"

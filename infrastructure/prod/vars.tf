@@ -1,5 +1,7 @@
 variable "env" {}
 variable "vpn_shared_key" {}
+variable "marketing_automation_admin_db_user" {}
+variable "marketing_automation_admin_db_password" {}
 variable "marketing_automation_db_user" {}
 variable "marketing_automation_db_password" {}
 
