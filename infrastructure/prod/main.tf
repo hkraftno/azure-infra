@@ -343,39 +343,6 @@ resource "azurerm_app_service_plan" "marketingautomationplan" {
   }
 }
 
-/*resource "azurerm_app_service" "marketingautomationappservice" {
-  name                = "hkraft-marketing-automation-dashboard"
-  location            = "${azurerm_resource_group.marketingautomationresourcegroup.location}"
-  resource_group_name = "${azurerm_resource_group.marketingautomationresourcegroup.name}"
-  app_service_plan_id = "${azurerm_app_service_plan.marketingautomationplan.id}"
-
-  site_config {
-    virtual_network_name     = "${azurerm_virtual_network.network.name}"
-    dotnet_framework_version = "v4.0"
-    scm_type                 = "LocalGit"
-    virtual_network_name     = "${azurerm_virtual_network.network.name}"
-  }
-
-  connection_string {
-    name  = "MarketingDb"
-    type  = "SQLServer"
-    value = "Server=tcp:marketing-sql-server.database.windows.net;Database=marketing-sql-db;User ID=${var.marketing_automation_db_user}@marketing-sql-server;Password=${var.marketing_automation_db_password};Trusted_Connection=False;Encrypt=True;"
-  }
-
-  app_settings = {
-    TEST_KEY                       = "test-value"
-    EngineKey                      = "RJL87AZnq0YpAJ3hFblc9EKK8bsY30wx3SgIevL1oX8X6H76Ro2VKQ=="
-    EngineUrl                      = "https://hkraft-marketing-automation.azurewebsites.net/"
-    APPINSIGHTS_INSTRUMENTATIONKEY = "a1bdded2-2277-4197-aadb-45e8d1dcf109"
-  }
-
-  tags {
-    environment = "${var.env}"
-    info        = "${var.info_tag}"
-    note        = "The app service for the Marketing Automation Dashboard."
-  }
-}*/
-
 resource "azurerm_storage_account" "marketingAutomationStorageAccount" {
   name                     = "${var.env}marketingautomation"
   resource_group_name      = "${azurerm_resource_group.marketingautomationresourcegroup.name}"
@@ -390,26 +357,6 @@ resource "azurerm_storage_account" "marketingAutomationStorageAccount" {
     note        = "The storageaccount for the Marketing Automation."
   }
 }
-
-/*resource "azurerm_function_app" "marketingautomationfa" {
-  name                      = "hkraft-marketing-automation"
-  location                  = "${azurerm_resource_group.marketingautomationresourcegroup.location}"
-  resource_group_name       = "${azurerm_resource_group.marketingautomationresourcegroup.name}"
-  app_service_plan_id       = "${azurerm_app_service_plan.marketingautomationplan.id}"
-  storage_connection_string = "${azurerm_storage_account.marketingAutomationStorageAccount.primary_connection_string}"
-  version                   = "~2"
-
-  app_settings = {
-    WEBSITE_RUN_FROM_PACKAGE       = "1"
-    APPINSIGHTS_INSTRUMENTATIONKEY = "a1bdded2-2277-4197-aadb-45e8d1dcf109"
-  }
-
-  tags {
-    environment = "${var.env}"
-    info        = "${var.info_tag}"
-    note        = "Marketing Automation Engine."
-  }
-}*/
 
 resource "azurerm_sql_server" "marketingautomationsqlserver" {
   name                         = "marketing-sql-server"
