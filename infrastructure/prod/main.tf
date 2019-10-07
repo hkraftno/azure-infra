@@ -185,7 +185,7 @@ resource "azurerm_virtual_machine_extension" "mgmtvmext" {
   settings = <<SETTINGS
       {
         "fileUris": [ "https://raw.githubusercontent.com/hkraftno/azure-infra/master/infrastructure/scripts/create_user.sh" ],
-        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}' && ./create_user.sh tof '${var.tof_public_ssh_key}' && ./create_user.sh karlgustav '${var.karlgustav_public_ssh_key}' && ./create_user.sh stian '${var.stian_public_ssh_key}' && ./create_user.sh jarlerik '${var.jarlerik_public_ssh_key}' && ./create_user.sh fratle '${var.fratle_public_ssh_key}'"
+        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}' && ./create_user.sh tof '${var.tof_public_ssh_key}' && ./create_user.sh karlgustav '${var.karlgustav_public_ssh_key}' && ./create_user.sh fratle '${var.fratle_public_ssh_key}' && ./create_user.sh marius '${var.marius_public_ssh_key}'"
     }
 SETTINGS
 
@@ -295,6 +295,17 @@ resource "azurerm_network_security_group" "securitygroup_apps" {
 /**
 * Marketing Automation
 */
+
+resource "azurerm_resource_group" "marketingautomationresourcegroup" {
+  name     = "marketing-automation-${var.env}"
+  location = "${var.location}"
+
+  tags {
+    environment = "${var.env}"
+    info        = "${var.info_tag}"
+  }
+}
+
 resource "azurerm_subnet" "marketingsubnet" {
   name                 = "${var.env}MarketingAutomationSubnet"
   resource_group_name  = "${azurerm_resource_group.resourcegroup.name}"
@@ -314,10 +325,10 @@ resource "azurerm_subnet" "marketingsubnet" {
   }
 }
 
-resource "azurerm_app_service_plan" "applications" {
-  name                = "${var.env}ApplicationServicePlan"
-  location            = "${azurerm_resource_group.resourcegroup.location}"
-  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
+resource "azurerm_app_service_plan" "marketingautomationplan" {
+  name                = "marketing-automation"
+  location            = "${azurerm_resource_group.marketingautomationresourcegroup.location}"
+  resource_group_name = "${azurerm_resource_group.marketingautomationresourcegroup.name}"
   kind                = "Windows"
 
   sku {
@@ -332,15 +343,17 @@ resource "azurerm_app_service_plan" "applications" {
   }
 }
 
-resource "azurerm_app_service" "marketingautomationappservice" {
+/*resource "azurerm_app_service" "marketingautomationappservice" {
   name                = "hkraft-marketing-automation-dashboard"
-  location            = "${azurerm_resource_group.resourcegroup.location}"
-  resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
-  app_service_plan_id = "${azurerm_app_service_plan.applications.id}"
+  location            = "${azurerm_resource_group.marketingautomationresourcegroup.location}"
+  resource_group_name = "${azurerm_resource_group.marketingautomationresourcegroup.name}"
+  app_service_plan_id = "${azurerm_app_service_plan.marketingautomationplan.id}"
 
   site_config {
+    virtual_network_name     = "${azurerm_virtual_network.network.name}"
     dotnet_framework_version = "v4.0"
     scm_type                 = "LocalGit"
+    virtual_network_name     = "${azurerm_virtual_network.network.name}"
   }
 
   connection_string {
@@ -350,7 +363,10 @@ resource "azurerm_app_service" "marketingautomationappservice" {
   }
 
   app_settings = {
-    "TEST_KEY" = "test-value"
+    TEST_KEY                       = "test-value"
+    EngineKey                      = "RJL87AZnq0YpAJ3hFblc9EKK8bsY30wx3SgIevL1oX8X6H76Ro2VKQ=="
+    EngineUrl                      = "https://hkraft-marketing-automation.azurewebsites.net/"
+    APPINSIGHTS_INSTRUMENTATIONKEY = "a1bdded2-2277-4197-aadb-45e8d1dcf109"
   }
 
   tags {
@@ -358,12 +374,12 @@ resource "azurerm_app_service" "marketingautomationappservice" {
     info        = "${var.info_tag}"
     note        = "The app service for the Marketing Automation Dashboard."
   }
-}
+}*/
 
 resource "azurerm_storage_account" "marketingAutomationStorageAccount" {
   name                     = "${var.env}marketingautomation"
-  resource_group_name      = "${azurerm_resource_group.resourcegroup.name}"
-  location                 = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name      = "${azurerm_resource_group.marketingautomationresourcegroup.name}"
+  location                 = "${azurerm_resource_group.marketingautomationresourcegroup.location}"
   account_tier             = "Standard"
   account_replication_type = "LRS"
   account_kind             = "StorageV2"
@@ -375,16 +391,17 @@ resource "azurerm_storage_account" "marketingAutomationStorageAccount" {
   }
 }
 
-resource "azurerm_function_app" "marketingautomationfa" {
+/*resource "azurerm_function_app" "marketingautomationfa" {
   name                      = "hkraft-marketing-automation"
-  location                  = "${azurerm_resource_group.resourcegroup.location}"
-  resource_group_name       = "${azurerm_resource_group.resourcegroup.name}"
-  app_service_plan_id       = "${azurerm_app_service_plan.applications.id}"
+  location                  = "${azurerm_resource_group.marketingautomationresourcegroup.location}"
+  resource_group_name       = "${azurerm_resource_group.marketingautomationresourcegroup.name}"
+  app_service_plan_id       = "${azurerm_app_service_plan.marketingautomationplan.id}"
   storage_connection_string = "${azurerm_storage_account.marketingAutomationStorageAccount.primary_connection_string}"
   version                   = "~2"
 
   app_settings = {
-    WEBSITE_RUN_FROM_PACKAGE = "1"
+    WEBSITE_RUN_FROM_PACKAGE       = "1"
+    APPINSIGHTS_INSTRUMENTATIONKEY = "a1bdded2-2277-4197-aadb-45e8d1dcf109"
   }
 
   tags {
@@ -392,12 +409,12 @@ resource "azurerm_function_app" "marketingautomationfa" {
     info        = "${var.info_tag}"
     note        = "Marketing Automation Engine."
   }
-}
+}*/
 
 resource "azurerm_sql_server" "marketingautomationsqlserver" {
   name                         = "marketing-sql-server"
-  resource_group_name          = "${azurerm_resource_group.resourcegroup.name}"
-  location                     = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name          = "${azurerm_resource_group.marketingautomationresourcegroup.name}"
+  location                     = "${azurerm_resource_group.marketingautomationresourcegroup.location}"
   version                      = "12.0"
   administrator_login          = "${var.marketing_automation_admin_db_user}"
   administrator_login_password = "${var.marketing_automation_admin_db_password}"
@@ -411,8 +428,8 @@ resource "azurerm_sql_server" "marketingautomationsqlserver" {
 
 resource "azurerm_sql_database" "marketingautomationsqldb" {
   name                             = "marketing-sql-db"
-  resource_group_name              = "${azurerm_resource_group.resourcegroup.name}"
-  location                         = "${azurerm_resource_group.resourcegroup.location}"
+  resource_group_name              = "${azurerm_resource_group.marketingautomationresourcegroup.name}"
+  location                         = "${azurerm_resource_group.marketingautomationresourcegroup.location}"
   server_name                      = "${azurerm_sql_server.marketingautomationsqlserver.name}"
   requested_service_objective_name = "S0"
 
