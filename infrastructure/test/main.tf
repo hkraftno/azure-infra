@@ -2,7 +2,7 @@ resource "azurerm_resource_group" "resourcegroup" {
   name     = "${var.env}ResourceGroup"
   location = "${var.location}"
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
   }
@@ -14,7 +14,7 @@ resource "azurerm_virtual_network" "network" {
   location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
   }
@@ -55,7 +55,7 @@ resource "azurerm_virtual_network_gateway" "vnetgw" {
     subnet_id                     = "${azurerm_subnet.gwsubnet.id}"
   }
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
   }
@@ -80,7 +80,7 @@ resource "azurerm_virtual_network_gateway_connection" "vnetgwconnection" {
   local_network_gateway_id   = "${azurerm_local_network_gateway.onpremise.id}"
   shared_key                 = "${var.vpn_shared_key}"
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
   }
@@ -100,7 +100,7 @@ resource "azurerm_network_security_group" "securitygroup" {
   location            = "${azurerm_resource_group.resourcegroup.location}"
   resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
   }
@@ -159,14 +159,9 @@ resource "azurerm_virtual_machine" "mgmtvm" {
 
   os_profile_linux_config {
     disable_password_authentication = true
-
-    ssh_keys = {
-      path     = "/home/azureuser/.ssh/authorized_keys"
-      key_data = "${var.peha_public_ssh_key}"
-    }
   }
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
     note        = "Management server"
@@ -185,11 +180,11 @@ resource "azurerm_virtual_machine_extension" "mgmtvmext" {
   settings = <<SETTINGS
       {
         "fileUris": [ "https://raw.githubusercontent.com/hkraftno/azure-infra/master/infrastructure/scripts/create_user.sh" ],
-        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}' && ./create_user.sh tof '${var.tof_public_ssh_key}' && ./create_user.sh karlgustav '${var.karlgustav_public_ssh_key}' && ./create_user.sh fratle '${var.fratle_public_ssh_key}' && ./create_user.sh marius '${var.marius_public_ssh_key}'"
+        "commandToExecute": "./create_user.sh simo '${var.simo_public_ssh_key}' && ./create_user.sh peha '${var.peha_public_ssh_key}' && ./create_user.sh tof '${var.tof_public_ssh_key}' && ./create_user.sh karlgustav '${var.karlgustav_public_ssh_key}' && ./create_user.sh fratle '${var.fratle_public_ssh_key}' && ./create_user.sh marius '${var.marius_public_ssh_key}' && ./create_user.sh sebastian '${var.sebastian_public_ssh_key}'"
     }
 SETTINGS
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
     note        = "Create users"
@@ -260,7 +255,7 @@ resource "azurerm_virtual_machine" "vm" {
     disable_password_authentication = false
   }
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
     note        = "This server is used as a server to ping for the VPN tunnel to stay up"
@@ -290,7 +285,7 @@ resource "azurerm_sql_server" "marketingsqlserver" {
   administrator_login          = "${var.marketing_automation_db_user}"
   administrator_login_password = "${var.marketing_automation_db_password}"
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
     note        = "This is the SQL-server used by Marketing Automation"
@@ -303,7 +298,7 @@ resource "azurerm_sql_database" "marketingsqldb" {
   location            = "${var.location}"
   server_name         = "${azurerm_sql_server.marketingsqlserver.name}"
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
     note        = "This is the SQL-database used by Marketing Automation"
@@ -331,7 +326,7 @@ resource "azurerm_network_security_group" "securitygroup_apps" {
   location            = "${azurerm_resource_group.resourcegroup.location}"
   resource_group_name = "${azurerm_resource_group.resourcegroup.name}"
 
-  tags {
+  tags = {
     environment = "${var.env}"
     info        = "${var.info_tag}"
   }
